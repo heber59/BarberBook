@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:15
+    container_name: barber-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barberdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  backend:
+    container_name: barber-backend
+    restart: always
+    build: .
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/barberdb
+      PORT: 4000
+      JWT_SECRET: supersecret
+      OPENAI_API_KEY: yourkey
+      TWILIO_ACCOUNT_SID: sid
+      TWILIO_AUTH_TOKEN: token
+      TWILIO_WHATSAPP_NUMBER: whatsapp:+123
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+
+volumes:
+  db-data:
