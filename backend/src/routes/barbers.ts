@@ -133,7 +133,6 @@ export default async function barbersRoutes(fastify: FastifyInstance) {
       };
 
       try {
-        // Verificar si el email ya existe
         const existingBarber = await fastify.prisma.barber.findUnique({
           where: { email },
         });
@@ -143,12 +142,11 @@ export default async function barbersRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        // Crear nuevo barbero (sin hash por simplicidad ahora)
         const barber = await fastify.prisma.barber.create({
           data: {
             name,
             email,
-            password, // En producción, esto debería estar hasheado
+            password,
           },
           select: {
             id: true,
@@ -161,6 +159,87 @@ export default async function barbersRoutes(fastify: FastifyInstance) {
         reply.status(201).send(barber);
       } catch (error) {
         reply.status(500).send({ error: "Error creating barber" });
+      }
+    }
+  );
+  fastify.delete(
+    "/:id",
+    {
+      schema: {
+        tags: ["Barbers"],
+        summary: "Eliminar barbero por ID",
+        description: "Elimina un barbero específico por su ID",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            description: "Barbero eliminado exitosamente",
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              deletedBarber: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  name: { type: "string" },
+                  email: { type: "string" },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Barbero no encontrado",
+            type: "object",
+            properties: {
+              error: { type: "string" },
+            },
+          },
+          500: {
+            description: "Server error",
+            type: "object",
+            properties: {
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+
+      try {
+        const existingBarber = await fastify.prisma.barber.findUnique({
+          where: { id },
+        });
+
+        if (!existingBarber) {
+          reply.status(404).send({ error: "Barber not found" });
+          return;
+        }
+
+        const deletedBarber = await fastify.prisma.barber.delete({
+          where: { id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        });
+
+        return {
+          success: true,
+          message: "Barber deleted successfully",
+          deletedBarber,
+        };
+      } catch (error) {
+        console.error("Error deleting barber:", error);
+        reply.status(500).send({ error: "Error deleting barber" });
       }
     }
   );
