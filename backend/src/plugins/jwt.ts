@@ -1,13 +1,15 @@
 // src/plugins/jwt.ts
 import fp from "fastify-plugin";
+import fjwt from "@fastify/jwt";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 export interface JwtPayload {
-  userId: string;
-  email: string;
+  barberId: string;
+  email: string | null;
+  name: string;
 }
 
-// Extendemos FastifyRequest y FastifyInstance con TypeScript
+// Extender FastifyRequest
 declare module "fastify" {
   interface FastifyRequest {
     user: JwtPayload;
@@ -17,18 +19,28 @@ declare module "fastify" {
   }
 }
 
+// Extender @fastify/jwt
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    payload: JwtPayload;
+    user: JwtPayload;
+  }
+}
+
 export default fp(async (fastify: FastifyInstance) => {
-  fastify.register(require("@fastify/jwt"), {
+  // Registrar el plugin JWT correctamente
+  await fastify.register(fjwt, {
     secret: process.env.JWT_SECRET || "supersecret",
   });
 
+  // Decorar el método authenticate
   fastify.decorate(
     "authenticate",
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        await request.jwtVerify<JwtPayload>();
+        await request.jwtVerify();
       } catch (err) {
-        reply.send(err);
+        reply.status(401).send({ error: "Unauthorized" });
       }
     }
   );

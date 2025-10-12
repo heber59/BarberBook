@@ -1,9 +1,8 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  // Registro
   fastify.post("/register", async (request, reply) => {
     const registerSchema = z.object({
       email: z.string().email(),
@@ -13,22 +12,29 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     const { email, password, name } = registerSchema.parse(request.body);
 
-    const existingUser = await fastify.prisma.user.findUnique({
+    const existingBarber = await fastify.prisma.barber.findUnique({
       where: { email },
     });
-    if (existingUser)
-      return reply.status(400).send({ error: "User already exists" });
+    if (existingBarber)
+      return reply.status(400).send({ error: "Barber already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await fastify.prisma.user.create({
-      data: { email, password: hashedPassword, name },
+    const barber = await fastify.prisma.barber.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+      },
     });
 
-    return { id: user.id, email: user.email, name: user.name };
+    return {
+      id: barber.id,
+      email: barber.email,
+      name: barber.name,
+    };
   });
 
-  // Login
   fastify.post("/login", async (request, reply) => {
     const loginSchema = z.object({
       email: z.string().email(),
@@ -36,32 +42,61 @@ export default async function authRoutes(fastify: FastifyInstance) {
     });
     const { email, password } = loginSchema.parse(request.body);
 
-    const user = await fastify.prisma.user.findUnique({ where: { email } });
-    if (!user) return reply.status(401).send({ error: "Invalid credentials" });
+    const barber = await fastify.prisma.barber.findUnique({
+      where: { email },
+    });
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return reply.status(401).send({ error: "Invalid credentials" });
+    if (!barber) {
+      return reply.status(401).send({ error: "Invalid credentials" });
+    }
 
-    const token = fastify.jwt.sign(
-      { userId: user.id, email: user.email },
-      { expiresIn: "1h" }
-    );
+    const valid = await bcrypt.compare(password, barber.password);
+    if (!valid) {
+      return reply.status(401).send({ error: "Invalid credentials" });
+    }
 
-    return { token };
+    const token = fastify.jwt.sign({
+      barberId: barber.id,
+      email: barber.email,
+      name: barber.name,
+    });
+
+    return {
+      token,
+      barber: {
+        id: barber.id,
+        email: barber.email,
+        name: barber.name,
+      },
+    };
   });
 
-  // Ruta protegida
   fastify.get(
     "/me",
     { preValidation: [fastify.authenticate] },
-    async (request) => {
-      const userId = request.user.userId; // TS ya reconoce que request.user es JwtPayload
+    async (request: FastifyRequest, reply) => {
+      const user = request.user as any;
+      const barberId = user.barberId;
 
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, name: true },
+      const barber = await fastify.prisma.barber.findUnique({
+        where: { id: barberId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+        },
       });
-      return user;
+
+      if (!barber) {
+        return reply.status(404).send({ error: "Barber not found" });
+      }
+
+      return barber;
     }
   );
+
+  fastify.post("/logout", async (request, reply) => {
+    return { message: "Logout successful" };
+  });
 }
