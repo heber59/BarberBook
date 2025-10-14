@@ -15,5 +15,6 @@ declare module "fastify" {
       email: string | null;
       name: string;
     };
+    server: FastifyInstance;
   }
 }
