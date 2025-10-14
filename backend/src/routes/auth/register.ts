@@ -1,34 +1,35 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import bcrypt from "bcrypt";
+import { z } from "zod";
 
-interface CreateBarberBody {
-  name: string;
+interface RegisterBody {
   email: string;
   password: string;
+  name: string;
 }
 
-export const createBarber = {
+export const registerBarber = {
   schema: {
-    tags: ["Barbers"],
-    summary: "Crear nuevo barbero",
-    description: "Crea un nuevo barbero en el sistema",
+    tags: ["Auth"],
+    summary: "Registrar nuevo barbero",
+    description: "Crea una nueva cuenta de barbero en el sistema",
     body: {
       type: "object",
-      required: ["name", "email", "password"],
+      required: ["email", "password", "name"],
       properties: {
-        name: { type: "string" },
-        email: { type: "string" },
+        email: { type: "string", format: "email" },
         password: { type: "string", minLength: 6 },
+        name: { type: "string", minLength: 1 },
       },
     },
     response: {
       201: {
-        description: "Barbero creado exitosamente",
+        description: "Barbero registrado exitosamente",
         type: "object",
         properties: {
           id: { type: "string" },
-          name: { type: "string" },
           email: { type: "string" },
+          name: { type: "string" },
           createdAt: { type: "string", format: "date-time" },
         },
       },
@@ -49,44 +50,44 @@ export const createBarber = {
     },
   },
   handler: async (request: FastifyRequest, reply: FastifyReply) => {
-    const { name, email, password } = request.body as CreateBarberBody;
-
     try {
-      // Validar longitud de contraseña
-      if (password.length < 6) {
-        reply.status(400).send({ error: "Password must be at least 6 characters long" });
-        return;
-      }
+      const registerSchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        name: z.string().min(1),
+      });
+
+      const { email, password, name } = registerSchema.parse(request.body);
 
       const existingBarber = await request.server.prisma.barber.findUnique({
         where: { email },
       });
 
       if (existingBarber) {
-        reply.status(400).send({ error: "Email already exists" });
+        reply.status(400).send({ error: "Barber already exists" });
         return;
       }
 
-      // Hashear la contraseña antes de guardar
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const barber = await request.server.prisma.barber.create({
         data: {
-          name,
           email,
-          password: hashedPassword, 
+          name,
+          password: hashedPassword,
+        },
         select: {
           id: true,
-          name: true,
           email: true,
+          name: true,
           createdAt: true,
         },
       });
 
       reply.status(201).send(barber);
     } catch (error) {
-      console.error("Error creating barber:", error);
-      reply.status(500).send({ error: "Error creating barber" });
+      console.error("Register error:", error);
+      reply.status(500).send({ error: "Error during registration" });
     }
   },
 };
