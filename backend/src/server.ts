@@ -6,6 +6,7 @@ import swaggerUI from "@fastify/swagger-ui";
 import authRoutes from "./routes/auth";
 import jwtPlugin from "./plugins/jwt";
 import appointmentsRoutes from "./routes/appointments";
+import aiAgentRoutes from "./routes/aiAgent";
 const fastify = Fastify({
   logger: true,
 });
@@ -45,6 +46,7 @@ const start = async () => {
   await fastify.register(barbersRoutes, { prefix: "" });
   await fastify.register(authRoutes, { prefix: "" });
   await fastify.register(appointmentsRoutes, { prefix: "" });
+  await fastify.register(aiAgentRoutes, { prefix: "" });
   fastify.get("/", async (request, reply) => {
     return {
       message: "BarberBook API",

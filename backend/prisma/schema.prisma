@@ -14,6 +14,19 @@ model Barber {
   password   String    
   createdAt  DateTime    @default(now())
   appointments Appointment[]
+  workingHours BarberWorkingHours[]
+}
+
+model BarberWorkingHours {
+  id        String   @id @default(cuid())
+  barber    Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  barberId  String
+  dayOfWeek Int      // 0-6 (domingo-sábado)
+  startTime String   // formato "09:00"
+  endTime   String   // formato "18:00"
+  isActive  Boolean  @default(true)
+
+  @@unique([barberId, dayOfWeek])
 }
 
 model Client {
@@ -35,4 +48,5 @@ model Appointment {
   status     String   @default("scheduled") // scheduled | canceled | done
   createdAt  DateTime @default(now())
   notes      String?
+  duration   Int      @default(60)
 }
