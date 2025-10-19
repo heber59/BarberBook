@@ -27,6 +27,7 @@ const start = async () => {
         { name: "Auth", description: "Endpoints de autenticación" },
         { name: "Barbers", description: "Endpoints de barberos" },
         { name: "Appointments", description: "Endpoints de citas" },
+        { name: "AIAgent", description: "Endpoints del agente de IA" },
       ],
     },
   });
