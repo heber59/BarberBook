@@ -83,7 +83,7 @@ export const confirmAppointment = {
       const { clientPhone, barberId, startAt, endAt, clientName, notes } =
         schema.parse(request.body);
 
-      // Verificar que el barbero existe
+
       const barber = await request.server.prisma.barber.findUnique({
         where: { id: barberId },
       });
@@ -93,7 +93,6 @@ export const confirmAppointment = {
         return;
       }
 
-      // Verificar disponibilidad del slot - ✅ CAMBIAR ESTA LÍNEA
       const available = await isSlotAvailable(
         barberId,
         new Date(startAt),
@@ -107,7 +106,6 @@ export const confirmAppointment = {
         return;
       }
 
-      // Buscar o crear cliente
       let client = await request.server.prisma.client.findUnique({
         where: { phone: clientPhone },
       });
@@ -121,7 +119,6 @@ export const confirmAppointment = {
         });
       }
 
-      // Crear la cita
       const appointment = await request.server.prisma.appointment.create({
         data: {
           barberId,
