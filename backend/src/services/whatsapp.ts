@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export async function replyViaTwilio(to: string, body: string) {
+export async function replyViaTwilio(to: string, content: string) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID!;
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
   const from = process.env.TWILIO_WHATSAPP_NUMBER!;
@@ -9,7 +9,7 @@ export async function replyViaTwilio(to: string, body: string) {
   const params = new URLSearchParams();
   params.append("To", to);
   params.append("From", from);
-  params.append("Body", body);
+  params.append("Body", content); // 👈 clásico
 
   const r = await axios.post(url, params.toString(), {
     auth: { username: accountSid, password: authToken },

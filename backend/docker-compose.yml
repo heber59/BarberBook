@@ -15,14 +15,11 @@ services:
     container_name: barber-backend
     restart: always
     build: .
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/barberdb
       PORT: 4000
-      JWT_SECRET: supersecret
-      OPENAI_API_KEY: yourkey
-      TWILIO_ACCOUNT_SID: sid
-      TWILIO_AUTH_TOKEN: token
-      TWILIO_WHATSAPP_NUMBER: whatsapp:+123
     ports:
       - "4000:4000"
     depends_on:

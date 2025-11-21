@@ -7,6 +7,9 @@ import authRoutes from "./routes/auth";
 import jwtPlugin from "./plugins/jwt";
 import appointmentsRoutes from "./routes/appointments";
 import aiAgentRoutes from "./routes/aiAgent";
+import whatsappRoutesWrapper from "./routes/WhatsAppWebhook";
+import formbody from "@fastify/formbody";
+
 const fastify = Fastify({
   logger: true,
 });
@@ -27,6 +30,8 @@ const start = async () => {
         { name: "Auth", description: "Endpoints de autenticación" },
         { name: "Barbers", description: "Endpoints de barberos" },
         { name: "Appointments", description: "Endpoints de citas" },
+        { name: "AI Agent", description: "Endpoints del agente de IA" },
+        { name: "whatsapp", description: "Endpoints de whatsapp" },
       ],
     },
   });
@@ -43,10 +48,13 @@ const start = async () => {
 
   await fastify.register(prismaPlugin);
   await fastify.register(jwtPlugin);
+  await fastify.register(formbody);
   await fastify.register(barbersRoutes, { prefix: "" });
   await fastify.register(authRoutes, { prefix: "" });
   await fastify.register(appointmentsRoutes, { prefix: "" });
   await fastify.register(aiAgentRoutes, { prefix: "" });
+  await fastify.register(whatsappRoutesWrapper, { prefix: "" });
+
   fastify.get("/", async (request, reply) => {
     return {
       message: "BarberBook API",

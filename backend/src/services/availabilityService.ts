@@ -85,14 +85,12 @@ export const getAvailableSlots = async (barberId: string, date: Date) => {
   return availableSlots;
 };
 
-// Obtener disponibilidad semanal
 export const getWeeklyAvailability = async (
   barberId: string,
   startDate: Date = new Date()
 ) => {
   const weekSlots: { [key: string]: { start: Date; end: Date }[] } = {};
 
-  // Generar los próximos 7 días
   for (let i = 0; i < 7; i++) {
     const currentDate = new Date(startDate);
     currentDate.setDate(currentDate.getDate() + i);
@@ -104,7 +102,6 @@ export const getWeeklyAvailability = async (
   return weekSlots;
 };
 
-// Verificar si un slot específico está disponible
 export const isSlotAvailable = async (
   barberId: string,
   startAt: Date,
@@ -126,7 +123,6 @@ export const isSlotAvailable = async (
   return !conflictingAppointment;
 };
 
-// Obtener horarios de trabajo del barbero
 export const getBarberWorkingHours = async (barberId: string) => {
   return await prisma.barberWorkingHours.findMany({
     where: {
@@ -139,7 +135,6 @@ export const getBarberWorkingHours = async (barberId: string) => {
   });
 };
 
-// Configurar horarios de trabajo del barbero
 export const setBarberWorkingHours = async (
   barberId: string,
   workingHours: {
@@ -148,12 +143,10 @@ export const setBarberWorkingHours = async (
     endTime: string;
   }[]
 ) => {
-  // Eliminar horarios existentes
   await prisma.barberWorkingHours.deleteMany({
     where: { barberId },
   });
 
-  // Crear nuevos horarios
   return await prisma.barberWorkingHours.createMany({
     data: workingHours.map((wh) => ({
       ...wh,
